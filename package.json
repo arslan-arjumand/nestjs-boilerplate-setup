@@ -39,6 +39,7 @@
     "mongoose": "^8.2.1",
     "mongoose-autopopulate": "^1.1.0",
     "nodemailer": "^6.9.7",
+    "passport": "^0.7.0",
     "passport-custom": "^1.1.1",
     "random-avatar-generator": "^2.0.0",
     "reflect-metadata": "^0.1.13",
