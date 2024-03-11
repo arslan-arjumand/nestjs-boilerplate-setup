@@ -1,7 +1,11 @@
+import * as dotenv from 'dotenv';
+
+dotenv.config();
+
 export default () => ({
   PORT: +process.env.PORT || 3001,
   MONGO: {
-    URL: process.env.MONGO_URI || 'mongodb://localhost:27017/development',
+    URL: process.env.MONGO_URI || '',
     logging: false,
     synchronize: true,
     migrationsRun: false,

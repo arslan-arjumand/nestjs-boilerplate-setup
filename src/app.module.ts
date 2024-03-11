@@ -31,7 +31,7 @@ import { ContactUsModule } from './modules/contact-us/contact-us.module';
     }),
     AuthModule,
     UserModule,
-    ContactUsModule
+    ContactUsModule,
   ],
 })
 export class AppModule {}
