@@ -1,11 +1,21 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsString, Length } from 'class-validator';
+import { IsString, Length } from 'class-validator';
 
+/**
+ * Data transfer object for signin credentials.
+ */
 export class SignInCredentialsDto {
+  /**
+   * Email of the user.
+   */
   @ApiProperty()
   @IsString()
   email: string;
 
+  /**
+   * Password of the user.
+   * Must be at least 8 characters long.
+   */
   @ApiProperty({
     minimum: 8,
     description: 'Password Length must be at least 8 characters',
@@ -13,26 +23,4 @@ export class SignInCredentialsDto {
   @IsString()
   @Length(8, 150, { message: 'Password Length must be at least 8 characters' })
   password: string;
-}
-
-export class GoogleSignInCredentialsDto {
-  @ApiProperty()
-  @IsString()
-  email: string;
-
-  @ApiProperty()
-  @IsString()
-  username: string;
-
-  @ApiProperty()
-  @IsString()
-  avatar: string;
-
-  @ApiProperty()
-  @IsBoolean()
-  isVerified: boolean;
-
-  @ApiProperty()
-  @IsString()
-  googleId: string;
 }

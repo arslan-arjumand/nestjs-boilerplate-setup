@@ -7,28 +7,36 @@ import helmet from 'helmet';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 
+/**
+ * Bootstrap function that initializes and starts the Nest.js application.
+ */
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     cors: true,
   });
 
   const httpAdapterHost = app.get(HttpAdapterHost);
+
+  // Set global prefix for all routes
   app.setGlobalPrefix('api');
+
+  // Apply global validation pipe to transform incoming data
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
+
+  // Apply global exception filter to handle HTTP exceptions
   app.useGlobalFilters(new HttpExceptionFilter(httpAdapterHost));
+
+  // Parse cookies in incoming requests
   app.use(cookieParser());
 
-  // Apply CORS Protection
+  // Enable Cross-Origin Resource Sharing (CORS)
   app.enableCors({
-    // origin: [
-    //   'http://localhost:3000',
-    // ],
     origin: '*',
     methods: 'GET, PATCH, POST, DELETE',
     credentials: true,
   });
 
-  // Apply Helmet Protection
+  // Apply Helmet protection middleware
   app.use(
     helmet({
       contentSecurityPolicy: false,
@@ -38,7 +46,7 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   const port = process.env.PORT || Number(configService.get('PORT'));
 
-  // Swagger Configuration
+  // Configure Swagger documentation
   const options = new DocumentBuilder()
     .addBearerAuth()
     .setTitle('Nest.js API')
@@ -49,6 +57,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, options);
   SwaggerModule.setup('api', app, document);
 
+  // Start listening on the specified port
   await app.listen(port);
 }
 

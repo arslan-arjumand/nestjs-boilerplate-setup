@@ -19,22 +19,11 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
-// @Services
 import { UserService } from './service/user.service';
-// @Dto
-import {
-  UpdateUserDto,
-  CreateUserDto,
-  CheckUserDto,
-  UpdatePasswordDto,
-} from './dto';
-// @Decorators
+import { UpdateUserDto, CreateUserDto, UpdatePasswordDto } from './dto';
 import { GetUser } from 'src/decorators/get-user.decorator';
-// @Utils
 import { compareHashValue, generalResponse, getHashValue } from 'src/utils';
-// @Schema
 import { Users } from './schema/user.schema';
-
 import { AvatarGenerator } from 'random-avatar-generator';
 
 @ApiTags('Users')
@@ -76,6 +65,13 @@ export class UserController {
     }
   }
 
+  /**
+   * @description get all users paginated
+   * @method GET
+   * @param page
+   * @param limit
+   * @return paginated users {}
+   */
   @ApiBearerAuth()
   @UseGuards(AuthGuard('validate_token'))
   @Get('paginated')
@@ -101,6 +97,11 @@ export class UserController {
     }
   }
 
+  /**
+   * @description get all users
+   * @method GET
+   * @return users {}
+   */
   @ApiBearerAuth()
   @UseGuards(AuthGuard('validate_token'))
   @Get()
@@ -119,6 +120,12 @@ export class UserController {
     }
   }
 
+  /**
+   * @description get a user by id
+   * @method GET
+   * @param id
+   * @return user {}
+   */
   @ApiBearerAuth()
   @UseGuards(AuthGuard('validate_token'))
   @Get(':id')
@@ -140,30 +147,12 @@ export class UserController {
     }
   }
 
-  @Post('validate-user')
-  async isUserExist(
-    @Res() response: Response,
-    @Body() checkUserDto: CheckUserDto,
-  ) {
-    try {
-      const data = await this.userService.findOne({
-        email: checkUserDto.email,
-      });
-
-      if (!data) {
-        throw new NotFoundException('Enter a valid user ID');
-      }
-
-      generalResponse({
-        response,
-        message: 'User validate successfully',
-        status: HttpStatus.OK,
-      });
-    } catch (error) {
-      throw new HttpException(error['message'], error['status']);
-    }
-  }
-
+  /**
+   * @description update user password
+   * @method POST
+   * @param updatePasswordDto
+   * @return updated user {}
+   */
   @ApiBearerAuth()
   @UseGuards(AuthGuard('validate_token'))
   @Post('change-password')
@@ -199,6 +188,13 @@ export class UserController {
     }
   }
 
+  /**
+   * @description update user password
+   * @method PATCH
+   * @param id
+   * @param updatePasswordDto
+   * @return updated user {}
+   */
   @ApiBearerAuth()
   @UseGuards(AuthGuard('validate_token'))
   @Patch(':id')
@@ -221,6 +217,12 @@ export class UserController {
     }
   }
 
+  /**
+   * @description delete user
+   * @method DELETE
+   * @param id
+   * @return deleted user {}
+   */
   @ApiBearerAuth()
   @UseGuards(AuthGuard('validate_token'))
   @Delete(':id')

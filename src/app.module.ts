@@ -5,8 +5,10 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import configuration from 'config/index';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
-import { ContactUsModule } from './modules/contact-us/contact-us.module';
 
+/**
+ * The root module of the Nest application.
+ */
 @Module({
   imports: [
     ThrottlerModule.forRoot([
@@ -25,13 +27,12 @@ import { ContactUsModule } from './modules/contact-us/contact-us.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
-        uri: configService.get<string>('MONGO_URI'),
+        uri: configService.get<string>('MONGO_URL'),
         autoIndex: true,
       }),
     }),
     AuthModule,
     UserModule,
-    ContactUsModule,
   ],
 })
 export class AppModule {}

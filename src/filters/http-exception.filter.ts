@@ -8,13 +8,26 @@ import {
   Logger,
 } from '@nestjs/common';
 
+/**
+ * Custom exception filter for handling HTTP exceptions.
+ */
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger: Logger;
+
+  /**
+   * Creates an instance of HttpExceptionFilter.
+   * @param httpAdapterHost - The HttpAdapterHost instance.
+   */
   constructor(private readonly httpAdapterHost: HttpAdapterHost) {
     this.logger = new Logger();
   }
 
+  /**
+   * Handles the exception and sends an appropriate response.
+   * @param exception - The exception object.
+   * @param host - The ArgumentsHost object.
+   */
   catch(exception: unknown, host: ArgumentsHost): void {
     const { httpAdapter } = this.httpAdapterHost;
     const ctx = host.switchToHttp();

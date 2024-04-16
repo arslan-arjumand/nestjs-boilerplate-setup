@@ -10,29 +10,20 @@ import {
   HttpStatus,
   HttpException,
   Res,
-  Req,
-  NotFoundException,
+  Headers,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Request, Response } from 'express';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-// @Decorators
 import { GetUser } from 'src/decorators/get-user.decorator';
-// @Dto
 import {
   ForgotPasswordDto,
-  GoogleSignInCredentialsDto,
   ResetPasswordDto,
   SignInCredentialsDto,
   SignupCredentialsDto,
-  VerifyEmailToken,
-  VerifyOtpDto,
 } from './dto';
-// @Entities
 import { Users } from '../user/schema/user.schema';
-// @Services
 import { AuthService } from './service/auth.service';
-// @Utils
 import { generalResponse } from 'src/utils';
 import { AvatarGenerator } from 'random-avatar-generator';
 
@@ -42,20 +33,12 @@ import { AvatarGenerator } from 'random-avatar-generator';
 export class AuthController {
   constructor(private authService: AuthService) {}
 
-  @Get()
-  async statusAPI(@Res() response: Response) {
-    try {
-      generalResponse({
-        response,
-        message: 'Server is up and running',
-        status: HttpStatus.OK,
-      });
-    } catch (error) {
-      throw new HttpException(error['message'], error['status']);
-    }
-  }
-
-  // ********** User Register Process ********** //
+  /**
+   * @description Sign up a new user.
+   * @method POST
+   * @param signupCredentialsDto
+   * @return An object containing the access token, refresh token, and user data.
+   */
   @Post('signup')
   async signUp(
     @Res() response: Response,
@@ -90,46 +73,12 @@ export class AuthController {
     }
   }
 
-  @Post('otp-verify')
-  async otpVerify(
-    @Res() response: Response,
-    @Body(ValidationPipe)
-    otpVerifyDto: VerifyOtpDto,
-  ) {
-    try {
-      const data = await this.authService.otpVerify(otpVerifyDto);
-
-      generalResponse({
-        response,
-        message: `OTP verified`,
-        status: HttpStatus.OK,
-        data,
-      });
-    } catch (error) {
-      throw new HttpException(error['message'], error['status']);
-    }
-  }
-
-  // ********** User Login Process ********** //
-  @Post('admin-signin')
-  async adminSignIn(
-    @Res() response: Response,
-    @Body(ValidationPipe) signInCredentialsDto: SignInCredentialsDto,
-  ) {
-    try {
-      const data = await this.authService.adminSignIn(signInCredentialsDto);
-
-      generalResponse({
-        response,
-        message: `Session created successful`,
-        status: HttpStatus.OK,
-        data,
-      });
-    } catch (error) {
-      throw new HttpException(error['message'], error['status']);
-    }
-  }
-
+  /**
+   * @description Sign in a user.
+   * @method POST
+   * @param signInCredentialsDto
+   * @return An object containing the access token, refresh token, and user data.
+   */
   @Post('signin')
   async signIn(
     @Res() response: Response,
@@ -149,33 +98,12 @@ export class AuthController {
     }
   }
 
-  @Post('google-signin')
-  async googleSignIn(
-    @Res() response: Response,
-    @Body(ValidationPipe)
-    googleSignInCredentialsDto: GoogleSignInCredentialsDto,
-  ) {
-    try {
-      const generator = new AvatarGenerator();
-
-      const newUserDto = {
-        ...googleSignInCredentialsDto,
-        avatar: generator.generateRandomAvatar('avatar'),
-      };
-
-      const data = await this.authService.googleSignIn(newUserDto);
-
-      generalResponse({
-        response,
-        message: `Session created successful`,
-        status: HttpStatus.OK,
-        data,
-      });
-    } catch (error) {
-      throw new HttpException(error['message'], error['status']);
-    }
-  }
-
+  /**
+   * @description Sign out a user.
+   * @method GET
+   * @param user
+   * @return A message indicating that the session has expired.
+   */
   @Get('logout')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('validate_token'))
@@ -193,6 +121,12 @@ export class AuthController {
     }
   }
 
+  /**
+   * @description Get user details.
+   * @method GET
+   * @param user
+   * @return User details.
+   */
   @Get('get-user')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('validate_token'))
@@ -211,36 +145,22 @@ export class AuthController {
     }
   }
 
-  @Get('verify-user')
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('validate_token'))
-  async refreshToken(@Req() request: Request, @Res() response: Response) {
-    const token = request['token'];
-    const user = request['user'];
-
-    if (token && user) {
-      generalResponse({
-        response,
-        message: `User verified successfully`,
-        status: HttpStatus.OK,
-        data: {
-          token,
-          user,
-        },
-      });
-    }
-  }
-
+  /**
+   * @description Forgot password.
+   * @method POST
+   * @param forgotPasswordDto
+   * @return A message indicating that the reset link has been sent.
+   */
   @Post('forgotPassword')
   async forgotPassword(
-    @Req() req: Request,
+    @Headers('origin') origin: any,
     @Res() response: Response,
     @Body() forgotPasswordDto: ForgotPasswordDto,
   ) {
     try {
       const data = await this.authService.forgotPassword(
         forgotPasswordDto,
-        req,
+        origin,
       );
 
       if (data && data.messageId) {
@@ -255,6 +175,12 @@ export class AuthController {
     }
   }
 
+  /**
+   * @description Reset password.
+   * @method POST
+   * @param resetPasswordDto
+   * @return An object containing the updated user data.
+   */
   @Post('reset-password')
   async resetPassword(
     @Res() response: Response,
@@ -268,28 +194,6 @@ export class AuthController {
         generalResponse({
           response,
           message: `Password changed successful`,
-          status: HttpStatus.OK,
-          data,
-        });
-      }
-    } catch (error) {
-      throw new HttpException(error['message'], error['status']);
-    }
-  }
-
-  @Post('verify-email')
-  async verifyEmailToken(
-    @Res() response: Response,
-    @Body(ValidationPipe)
-    verifyEmailTokenDto: VerifyEmailToken,
-  ) {
-    try {
-      const data = await this.authService.verifyEmailToken(verifyEmailTokenDto);
-
-      if (data) {
-        generalResponse({
-          response,
-          message: `Email verification successful`,
           status: HttpStatus.OK,
           data,
         });

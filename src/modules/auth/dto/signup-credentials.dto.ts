@@ -1,15 +1,35 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString, Length, Matches } from 'class-validator';
+import { IsOptional, IsString, Length } from 'class-validator';
 
+/**
+ * Data transfer object for signup credentials.
+ */
 export class SignupCredentialsDto {
+  /**
+   * The username of the user.
+   *
+   * @example john_doe
+   */
   @ApiProperty()
   @IsString()
   username: string;
 
+  /**
+   * The email address of the user.
+   *
+   * @example john@example.com
+   */
   @ApiProperty()
   @IsString()
   email: string;
 
+  /**
+   * The password of the user.
+   *
+   * @example P@ssw0rd
+   * @minimum 8
+   * @description Password Length must be at least 8 characters.
+   */
   @ApiProperty({
     minimum: 8,
     description: 'Password Length must be at least 8 characters',
@@ -17,16 +37,4 @@ export class SignupCredentialsDto {
   @IsString()
   @Length(8, 150, { message: 'Password Length must be at least 8 characters' })
   password: string;
-
-  @ApiProperty({ minimum: 7, maximum: 15 })
-  @IsString()
-  // @Matches(/^((\+92)?(0092)?(92)?(0)?)(3)([0-9]{9})$/, {
-  //   message: 'Enter a valid phone number',
-  // })
-  phone_number: string;
-
-  @ApiProperty()
-  @IsOptional()
-  @IsString()
-  avatar: string;
 }
