@@ -5,6 +5,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import configuration from 'config/index';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
+import { HealthCheckModule } from './modules/health-check/health-check.module';
 
 /**
  * The root module of the Nest application.
@@ -31,6 +32,7 @@ import { UserModule } from './modules/user/user.module';
         autoIndex: true,
       }),
     }),
+    HealthCheckModule,
     AuthModule,
     UserModule,
   ],
