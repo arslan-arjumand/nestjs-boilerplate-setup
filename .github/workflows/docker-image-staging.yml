@@ -1,0 +1,70 @@
+name: Docker Image CI/CD - Staging
+
+on:
+  push:
+    branches: ["-"]
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials from OIDC
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-region: ${{ secrets.AWS_REGION }}
+          role-to-assume: "arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-action-ocid-role"
+          role-session-name: "GitHubActionsSession"
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Add .env file
+        run: |
+          echo ${{ secrets.STAGING_ENV }} | base64 -d > .env
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Install dependencies and build app
+        run: |
+          npm install
+          npm run build
+
+      - name: Build, tag, and push Docker image
+        run: |
+          docker build -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_STAGING_REPOSITORY }}:latest -f Dockerfile .
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_STAGING_REPOSITORY }}:latest
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 1.1.3
+
+      - name: Terraform deploy
+        id: deploy
+        run: |
+          cd terraform/staging
+          terraform init
+          terraform workspace select Staging || terraform workspace new Staging
+          terraform apply -auto-approve \
+            -var="region=${{ secrets.AWS_REGION }}" \
+            -var="certificate_arn=${{ secrets.ECS_SSL_CERTIFICATE_ARN }}"
+
+      - name: Force new ECS deployment
+        run: |
+          CLUSTER_ARN=${{ secrets.ECS_CLUSTER_STAGING_ARN }}
+          SERVICE_NAME=${{ secrets.ECS_SERVICE_STAGING_NAME }}
+          aws ecs update-service --cluster "$CLUSTER_ARN" --service "$SERVICE_NAME" --force-new-deployment
+          aws ecs wait services-stable --cluster "$CLUSTER_ARN" --services "$SERVICE_NAME"
