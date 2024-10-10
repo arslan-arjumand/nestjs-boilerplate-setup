@@ -32,8 +32,3 @@ variable "alb_target_group_arn" {
   description = "The ARN of the ALB target group to associate with ECS service"
   type        = string
 }
-
-variable "health_check_path" {
-  description = "Path for health check on the target group"
-  type        = string
-}

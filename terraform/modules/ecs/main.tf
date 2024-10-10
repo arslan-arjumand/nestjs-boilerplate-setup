@@ -57,13 +57,6 @@ resource "aws_ecs_task_definition" "main" {
           "awslogs-stream-prefix" = "ecs"
         }
       }
-      healthCheck = {
-        command     = ["CMD-SHELL", "curl -f http://localhost:${var.container_port}${var.health_check_path} || exit 1"]
-        interval    = 30     # Time between health checks (in seconds)
-        timeout     = 5      # Time after which a health check times out (in seconds)
-        startPeriod = 60    # Grace period for the container to start (in seconds)
-        retries     = 3      # Number of times to retry a failed health check before considering the container unhealthy
-      }
     }
   ])
 }

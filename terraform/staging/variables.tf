@@ -6,7 +6,7 @@ variable "region" {
 variable "app_name" {
   description = "Name of the application"
   type    = string
-  default = "app_name"
+  default = "app-name"
 }
 
 variable "environment" {

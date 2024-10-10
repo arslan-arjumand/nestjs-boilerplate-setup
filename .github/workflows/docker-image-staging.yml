@@ -33,15 +33,6 @@ jobs:
         run: |
           echo ${{ secrets.STAGING_ENV }} | base64 -d > .env
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          
-      - name: Install dependencies and build app
-        run: |
-          npm install
-          npm run build
-
       - name: Build, tag, and push Docker image
         run: |
           docker build -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_STAGING_REPOSITORY }}:latest -f Dockerfile .

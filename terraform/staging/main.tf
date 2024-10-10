@@ -31,7 +31,6 @@ module "ecs" {
   subnet_ids            = module.vpc.subnet_ids             
   security_group_ids    = module.vpc.security_group_ids
   alb_target_group_arn  = module.alb.alb_target_group_arn   # Use ALB target group from ALB module
-  health_check_path     = var.health_check_path
   
   depends_on = [ module.alb ]  # Ensure ALB is created before ECS service
 }
