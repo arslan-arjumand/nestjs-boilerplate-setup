@@ -1,6 +1,6 @@
-import { BadRequestException } from '@nestjs/common';
-import { Document, Model, FilterQuery } from 'mongoose';
-import { IFindQuery } from '../interface/entity.interface';
+import { BadRequestException } from "@nestjs/common"
+import { Document, Model, FilterQuery } from "mongoose"
+import { IFindQuery } from "../interface/entity.interface"
 
 /**
  * Abstract class representing a repository for entities.
@@ -15,8 +15,8 @@ export abstract class EntityRepository<T extends Document> {
    * @returns A promise that resolves to the created entity.
    */
   async create(createEntityData: Partial<T>): Promise<T> {
-    const entity = new this.entityModel(createEntityData);
-    return entity.save();
+    const entity = new this.entityModel(createEntityData)
+    return entity.save()
   }
 
   /**
@@ -25,13 +25,8 @@ export abstract class EntityRepository<T extends Document> {
    * @param projection - The projection to apply on the found entity.
    * @returns A promise that resolves to the found entity or null if not found.
    */
-  async findOne(
-    filterQuery: FilterQuery<T>,
-    projection?: Record<string, unknown>,
-  ): Promise<T | null> {
-    return this.entityModel
-      .findOne({ ...filterQuery }, { ...projection })
-      .exec();
+  async findOne(filterQuery: FilterQuery<T>, projection?: Record<string, unknown>): Promise<T | null> {
+    return this.entityModel.findOne({ ...filterQuery }, { ...projection }).exec()
   }
 
   /**
@@ -42,18 +37,18 @@ export abstract class EntityRepository<T extends Document> {
    * @returns A promise that resolves to an object containing the aggregated data, count, page, limit, totalPage, and nextPage.
    */
   async aggregate({ filterQuery, limit, page }: IFindQuery) {
-    const currentPage = page - 1;
+    const currentPage = page ? page - 1 : 0
 
     const data = await this.entityModel
       .aggregate(filterQuery)
-      .skip(limit * currentPage)
-      .limit(limit)
-      .exec();
+      .skip(limit ? limit * currentPage : 0)
+      .limit(limit ? limit : 0)
+      .exec()
 
     // find count
-    const count = (await this.entityModel.aggregate(filterQuery)).length;
+    const count = (await this.entityModel.aggregate(filterQuery)).length
 
-    const totalPage = Math.ceil(count / limit);
+    const totalPage = Math.ceil(count / (limit ? limit : 0))
 
     return {
       data,
@@ -61,8 +56,8 @@ export abstract class EntityRepository<T extends Document> {
       page,
       limit,
       totalPage,
-      nextPage: page < totalPage ? page + 1 : null,
-    };
+      nextPage: page ? (page < totalPage ? page + 1 : null) : null
+    }
   }
 
   /**
@@ -75,26 +70,19 @@ export abstract class EntityRepository<T extends Document> {
    * @param select - The fields to select in the found entities.
    * @returns A promise that resolves to an array of found entities.
    */
-  async find({
-    filterQuery,
-    projection,
-    populate,
-    limit,
-    sort,
-    select,
-  }: IFindQuery) {
+  async find({ filterQuery, projection, populate, limit, sort, select }: IFindQuery) {
     return this.entityModel
       .find(
         {
-          ...filterQuery,
+          ...filterQuery
         },
-        { ...projection },
+        { ...projection }
       )
       .populate(populate)
-      .limit(limit)
+      .limit(limit ? limit : 0)
       .sort(sort)
       .select(select)
-      .exec();
+      .exec()
   }
 
   /**
@@ -108,37 +96,29 @@ export abstract class EntityRepository<T extends Document> {
    * @param select - The fields to select in the found entities.
    * @returns A promise that resolves to an object containing the found entities, count, page, limit, totalPage, and nextPage.
    */
-  async findWithPagination({
-    filterQuery,
-    projection,
-    page = 1,
-    limit = 25,
-    populate,
-    sort,
-    select,
-  }: IFindQuery) {
-    const currentPage = page - 1;
+  async findWithPagination({ filterQuery, projection, page = 1, limit = 25, populate, sort, select }: IFindQuery) {
+    const currentPage = page ? page - 1 : 0
 
     // find list
     const data = await this.entityModel
       .find({ ...filterQuery }, { ...projection })
       .populate(populate)
-      .skip(limit * currentPage)
-      .limit(limit)
+      .skip(limit ? limit * currentPage : 0)
+      .limit(limit ? limit : 0)
       .sort(sort)
       .select(select)
-      .exec();
+      .exec()
 
     // find count
     const count = await this.entityModel
       .find()
       .where({
-        ...filterQuery,
+        ...filterQuery
       })
       .countDocuments()
-      .exec();
+      .exec()
 
-    const totalPage = Math.ceil(count / limit);
+    const totalPage = Math.ceil(count / (limit ? limit : 0))
 
     return {
       data,
@@ -146,8 +126,8 @@ export abstract class EntityRepository<T extends Document> {
       page,
       limit,
       totalPage,
-      nextPage: page < totalPage ? page + 1 : null,
-    };
+      nextPage: page ? (page < totalPage ? page + 1 : null) : null
+    }
   }
 
   /**
@@ -156,9 +136,7 @@ export abstract class EntityRepository<T extends Document> {
    * @returns A promise that resolves to an array of found entities.
    */
   async searchList(searchString: string): Promise<any> {
-    return this.entityModel
-      .find({ name: { $regex: searchString, $options: 'i' } } as any)
-      .exec() as any;
+    return this.entityModel.find({ name: { $regex: searchString, $options: "i" } } as any).exec() as any
   }
 
   /**
@@ -168,23 +146,20 @@ export abstract class EntityRepository<T extends Document> {
    * @returns A promise that resolves to the updated entity or null if not found.
    * @throws BadRequestException if the entity is not found.
    */
-  async findOneAndUpdate(
-    filterQuery: FilterQuery<T>,
-    updateEntityData: Partial<T>,
-  ): Promise<T | null> {
-    const data = await this.findOne(filterQuery);
+  async findOneAndUpdate(filterQuery: FilterQuery<T>, updateEntityData: Partial<T>): Promise<T | null> {
+    const data = await this.findOne(filterQuery)
     if (!data) {
-      throw new BadRequestException('Invalid Data');
+      throw new BadRequestException("Invalid Data")
     }
     return this.entityModel
       .findOneAndUpdate(
         filterQuery,
         {
-          $set: updateEntityData,
+          $set: updateEntityData
         },
-        { new: true },
+        { new: true }
       )
-      .exec();
+      .exec()
   }
 
   /**
@@ -194,10 +169,10 @@ export abstract class EntityRepository<T extends Document> {
    * @throws BadRequestException if the entity is not found.
    */
   async remove(filterQuery: FilterQuery<T>): Promise<T | unknown> {
-    const data = await this.findOne(filterQuery);
+    const data = await this.findOne(filterQuery)
     if (!data) {
-      throw new BadRequestException('Invalid Data');
+      throw new BadRequestException("Invalid Data")
     }
-    return this.entityModel.deleteOne(filterQuery).exec();
+    return this.entityModel.deleteOne(filterQuery).exec()
   }
 }

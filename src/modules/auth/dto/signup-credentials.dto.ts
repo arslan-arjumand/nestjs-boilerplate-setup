@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString, Length } from 'class-validator';
+import { ApiProperty } from "@nestjs/swagger"
+import { IsOptional, IsString, Length } from "class-validator"
 
 /**
  * Data transfer object for signup credentials.
@@ -12,7 +12,7 @@ export class SignupCredentialsDto {
    */
   @ApiProperty()
   @IsString()
-  username: string;
+  username: string
 
   /**
    * The email address of the user.
@@ -21,7 +21,7 @@ export class SignupCredentialsDto {
    */
   @ApiProperty()
   @IsString()
-  email: string;
+  email: string
 
   /**
    * The password of the user.
@@ -32,9 +32,9 @@ export class SignupCredentialsDto {
    */
   @ApiProperty({
     minimum: 8,
-    description: 'Password Length must be at least 8 characters',
+    description: "Password Length must be at least 8 characters"
   })
   @IsString()
-  @Length(8, 150, { message: 'Password Length must be at least 8 characters' })
-  password: string;
+  @Length(8, 150, { message: "Password Length must be at least 8 characters" })
+  password: string
 }

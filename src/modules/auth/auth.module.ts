@@ -1,15 +1,15 @@
-import { Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
-import { PassportModule } from '@nestjs/passport';
-import { AuthController } from './auth.controller';
-import { AuthService } from './service/auth.service';
-import { LocalStrategy } from './jwt/local.strategy';
-import configuration from 'config/index';
-import { UserModule } from '../user/user.module';
-import { AuthRepository } from './repository/auth.repository';
-import { EmailModule } from '../email/email.module';
+import { Module } from "@nestjs/common"
+import { JwtModule } from "@nestjs/jwt"
+import { PassportModule } from "@nestjs/passport"
+import { AuthController } from "./auth.controller"
+import { AuthService } from "./service/auth.service"
+import { LocalStrategy } from "./jwt/local.strategy"
+import { UserModule } from "../user/user.module"
+import { AuthRepository } from "./repository/auth.repository"
+import { EmailModule } from "../email/email.module"
+import config from "@/config"
 
-const { JWT_SECRET_TOKEN, JWT_TOKEN_EXPIRATION } = configuration().JWT;
+const { JWT_SECRET_TOKEN, JWT_TOKEN_EXPIRATION } = config.JWT
 
 /**
  * The `AuthModule` is responsible for handling authentication-related functionality.
@@ -21,13 +21,13 @@ const { JWT_SECRET_TOKEN, JWT_TOKEN_EXPIRATION } = configuration().JWT;
     JwtModule.register({
       secret: JWT_SECRET_TOKEN,
       signOptions: {
-        expiresIn: JWT_TOKEN_EXPIRATION,
-      },
+        expiresIn: JWT_TOKEN_EXPIRATION
+      }
     }),
     UserModule,
-    EmailModule,
+    EmailModule
   ],
   controllers: [AuthController],
-  providers: [AuthService, AuthRepository, LocalStrategy],
+  providers: [AuthService, AuthRepository, LocalStrategy]
 })
 export class AuthModule {}

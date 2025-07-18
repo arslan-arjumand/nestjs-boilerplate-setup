@@ -1,3 +1,5 @@
+import { Response } from "express"
+
 /**
  * Sends a general response with the specified status, message, and data.
  *
@@ -8,9 +10,19 @@
  * @param {any} [options.data=null] - The optional data to be sent in the response.
  * @returns {Object} The response object.
  */
-export const generalResponse = ({ response, message, status, data = null }) =>
+export const generalResponse = ({
+  response,
+  message,
+  status,
+  data = null
+}: {
+  response: Response
+  message: string
+  status: number
+  data?: any
+}): object =>
   response.status(status).json({
     status,
     message,
-    data,
-  });
+    data
+  })

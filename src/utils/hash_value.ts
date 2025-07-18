@@ -1,4 +1,4 @@
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from "bcrypt"
 
 /**
  * Generates a hash value for the given string value.
@@ -6,9 +6,9 @@ import * as bcrypt from 'bcrypt';
  * @returns A Promise that resolves to the generated hash value.
  */
 export const getHashValue = async (value: string): Promise<string> => {
-  const result = await bcrypt.hash(value, await bcrypt.genSalt(10));
-  return result;
-};
+  const result = await bcrypt.hash(value, await bcrypt.genSalt(10))
+  return result
+}
 
 /**
  * Compares a string value with a hash value.
@@ -17,5 +17,5 @@ export const getHashValue = async (value: string): Promise<string> => {
  * @returns A Promise that resolves to a boolean indicating whether the values match.
  */
 export const compareHashValue = async (value: string, hashValue: string): Promise<boolean> => {
-  return bcrypt.compare(value, hashValue);
-};
+  return bcrypt.compare(value, hashValue)
+}

@@ -1,12 +1,12 @@
-import { Injectable } from '@nestjs/common';
-import * as nodemailer from 'nodemailer';
-import configuration from 'config/index';
+import { Injectable } from "@nestjs/common"
+import * as nodemailer from "nodemailer"
+import config from "@/config"
 
-const { MAIL } = configuration();
+const { EMAIL, HOST, PORT, PASSWORD } = config.MAIL
 
 @Injectable()
 export class EmailService {
-  private transporter: nodemailer.Transporter;
+  private transporter: nodemailer.Transporter
 
   /**
    * Represents an EmailService that handles sending emails.
@@ -17,15 +17,14 @@ export class EmailService {
      * @type {Transporter}
      */
     this.transporter = nodemailer.createTransport({
-      service: MAIL.SERVER,
-      host: MAIL.HOST,
-      port: MAIL.PORT,
+      host: HOST,
+      port: Number(PORT),
       secure: false,
       auth: {
-        user: MAIL.EMAIL,
-        pass: MAIL.PASSWORD,
-      },
-    });
+        user: EMAIL,
+        pass: PASSWORD
+      }
+    })
   }
 
   /**
@@ -37,14 +36,14 @@ export class EmailService {
    */
   async sendEmail(to: string, subject: string, text: string): Promise<nodemailer.SentMessageInfo> {
     const mailOptions = {
-      from: `"Backend Application" <${MAIL.EMAIL}>`,
+      from: `"Backend Application" <${EMAIL}>`,
       to: to,
       subject: subject,
-      text: text,
-    };
+      text: text
+    }
 
-    const info = await this.transporter.sendMail(mailOptions);
+    const info = await this.transporter.sendMail(mailOptions)
 
-    return info;
+    return info
   }
 }

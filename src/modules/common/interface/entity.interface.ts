@@ -1,8 +1,8 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsOptional } from 'class-validator';
-import { Document, FilterQuery } from 'mongoose';
+import { ApiProperty } from "@nestjs/swagger"
+import { IsNumber, IsOptional } from "class-validator"
+import { Document } from "mongoose"
 
-export type IEntity = Document;
+export type IEntity = Document
 
 /**
  * Represents a query object used for finding entities.
@@ -11,37 +11,37 @@ export interface IFindQuery {
   /**
    * Specifies the filter query to apply when finding entities.
    */
-  filterQuery?: any;
+  filterQuery?: any
 
   /**
    * Specifies the projection fields to include or exclude when finding entities.
    */
-  projection?: Record<string, unknown>;
+  projection?: Record<string, unknown>
 
   /**
    * Specifies the page number for pagination when finding entities.
    */
-  page?: number;
+  page?: number
 
   /**
    * Specifies the maximum number of entities to return per page when paginating.
    */
-  limit?: number;
+  limit?: number
 
   /**
    * Specifies the fields to populate when finding entities.
    */
-  populate?: any;
+  populate?: any
 
   /**
    * Specifies the sorting criteria when finding entities.
    */
-  sort?: any;
+  sort?: any
 
   /**
    * Specifies the fields to select when finding entities.
    */
-  select?: any;
+  select?: any
 }
 
 /**
@@ -62,15 +62,15 @@ export class QueryDto {
   @ApiProperty({
     minimum: 0,
     maximum: 10000,
-    title: 'Page',
+    title: "Page",
     exclusiveMaximum: true,
     exclusiveMinimum: true,
-    format: 'int32',
-    default: 0,
+    format: "int32",
+    default: 0
   })
   @IsNumber()
   @IsOptional()
-  public page = 1;
+  public page = 1
 
   /**
    * The maximum number of items to return per page. Defaults to 25 if not provided.
@@ -78,5 +78,5 @@ export class QueryDto {
   @ApiProperty()
   @IsNumber()
   @IsOptional()
-  public limit = 25;
+  public limit = 25
 }

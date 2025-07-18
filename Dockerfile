@@ -1,5 +1,5 @@
 # Use a specific Node.js version as the base image for the builder stage
-FROM node:18-alpine as builder
+FROM node:22.17-alpine as builder
 
 # Set the working directory inside the container
 WORKDIR /app
@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install Node.js dependencies
-RUN npm ci
+RUN npm install
 
 # Copy the entire project to the working directory
 COPY . .
@@ -17,7 +17,7 @@ COPY . .
 RUN npm run build
 
 # Use the same specific Node.js version for the production stage
-FROM node:18-alpine as production
+FROM node:22.17-alpine as production
 
 # Set the working directory inside the container
 WORKDIR /app
@@ -29,7 +29,7 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package*.json ./
 
 # Install only production dependencies
-RUN npm ci --omit=dev
+RUN npm install --omit=dev
 
 # Copy .env file if it exists
 COPY --from=builder /app/.env ./.env

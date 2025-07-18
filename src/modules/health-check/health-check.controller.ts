@@ -5,13 +5,13 @@ import {
   ClassSerializerInterceptor,
   Res,
   HttpStatus,
-  HttpException,
-} from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
-import { Response } from 'express';
+  HttpException
+} from "@nestjs/common"
+import { ApiTags } from "@nestjs/swagger"
+import { Response } from "express"
 
-@ApiTags('Heatlh-Check')
-@Controller('health-check')
+@ApiTags("Heatlh-Check")
+@Controller("health-check")
 export class HealthCheckController {
   constructor() {}
 
@@ -27,10 +27,10 @@ export class HealthCheckController {
     try {
       response.status(HttpStatus.OK).json({
         status: HttpStatus.OK,
-        message: 'Health check is successful',
-      });
+        message: "Health check is successful"
+      })
     } catch (error) {
-      throw new HttpException(error['message'], error['status']);
+      throw new HttpException(error["message"], error["status"])
     }
   }
 }

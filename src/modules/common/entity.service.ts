@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { EntityRepository } from './repository/entity.repository';
-import { IEntity, IFindQuery } from './interface/entity.interface';
+import { Injectable } from "@nestjs/common"
+import { EntityRepository } from "./repository/entity.repository"
+import { IEntity, IFindQuery } from "./interface/entity.interface"
 
 @Injectable()
 export abstract class EntityServices {
@@ -15,8 +15,8 @@ export abstract class EntityServices {
    * @param createEntityDto The DTO for creating the entity.
    * @returns The created entity.
    */
-  async create(createEntityDto: unknown): Promise<IEntity> {
-    return this.entityRepository.create(createEntityDto);
+  async create(createEntityDto: Partial<IEntity>): Promise<IEntity> {
+    return this.entityRepository.create(createEntityDto)
   }
 
   /**
@@ -25,7 +25,7 @@ export abstract class EntityServices {
    * @returns An array of entities.
    */
   async findAll(query: IFindQuery) {
-    return this.entityRepository.find(query);
+    return this.entityRepository.find(query)
   }
 
   /**
@@ -34,7 +34,7 @@ export abstract class EntityServices {
    * @returns The result of the aggregation operation.
    */
   async aggregate(query: IFindQuery) {
-    return this.entityRepository.aggregate(query);
+    return this.entityRepository.aggregate(query)
   }
 
   /**
@@ -43,7 +43,7 @@ export abstract class EntityServices {
    * @returns An array of entities with pagination information.
    */
   async findAllWithPagination(query: IFindQuery) {
-    return this.entityRepository.findWithPagination(query);
+    return this.entityRepository.findWithPagination(query)
   }
 
   /**
@@ -52,11 +52,8 @@ export abstract class EntityServices {
    * @param projection The projection for the entity.
    * @returns The found entity.
    */
-  async findOne(
-    condition: object,
-    projection?: Record<string, unknown>,
-  ): Promise<IEntity> {
-    return this.entityRepository.findOne(condition, projection);
+  async findOne(condition: object, projection?: Record<string, unknown>): Promise<IEntity | null> {
+    return this.entityRepository.findOne(condition, projection)
   }
 
   /**
@@ -65,7 +62,7 @@ export abstract class EntityServices {
    * @returns An array of entities matching the search string.
    */
   async searchList(searchString: string): Promise<IEntity[]> {
-    return this.entityRepository.searchList(searchString);
+    return this.entityRepository.searchList(searchString)
   }
 
   /**
@@ -74,8 +71,8 @@ export abstract class EntityServices {
    * @param updateEntityDto The DTO for updating the entity.
    * @returns The updated entity.
    */
-  async update(condition: object, updateEntityDto: unknown): Promise<IEntity> {
-    return this.entityRepository.findOneAndUpdate(condition, updateEntityDto);
+  async update(condition: object, updateEntityDto: Partial<IEntity>): Promise<IEntity | null> {
+    return this.entityRepository.findOneAndUpdate(condition, updateEntityDto)
   }
 
   /**
@@ -84,6 +81,6 @@ export abstract class EntityServices {
    * @returns The removed entity or unknown.
    */
   async remove(condition: object): Promise<IEntity | unknown> {
-    return this.entityRepository.remove(condition);
+    return this.entityRepository.remove(condition)
   }
 }

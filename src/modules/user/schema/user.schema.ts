@@ -1,5 +1,5 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Document } from 'mongoose';
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
+import { HydratedDocument, Document } from "mongoose"
 
 /**
  * Represents a user in the system.
@@ -15,59 +15,122 @@ import { HydratedDocument, Document } from 'mongoose';
      * @returns The transformed JSON representation of the document.
      */
     transform: function (doc: any, ret: any) {
-      delete ret._id;
-      delete ret.__v;
-      return ret;
-    },
+      delete ret._id
+      delete ret.__v
+      delete ret.password
+      delete ret.refresh_token
+      delete ret.password_reset_token
+      delete ret.password_reset_expires
+      return ret
+    }
   },
-  timestamps: true,
+  timestamps: true
 })
 export class Users extends Document {
   /**
    * The username of the user.
    */
   @Prop({
-    type: 'string',
-    required: true,
+    type: "string",
+    required: true
   })
-  username: string;
+  username: string
 
   /**
    * The email address of the user.
    */
   @Prop({
-    type: 'string',
+    type: "string",
     required: true,
+    unique: true
   })
-  email: string;
+  email: string
 
   /**
    * The password of the user.
    * Defaults to an empty string if not provided.
    */
   @Prop({
-    type: 'string',
+    type: "string",
     required: false,
-    default: '',
+    default: ""
   })
-  password: string;
+  password: string
 
   /**
    * The avatar URL of the user.
    */
   @Prop({
     type: String,
-    required: true,
+    required: true
   })
-  avatar: string;
+  avatar: string
+
+  /**
+   * The refresh token for the user.
+   */
+  @Prop({
+    type: String,
+    required: false,
+    default: null
+  })
+  refresh_token: string
+
+  /**
+   * The password reset token for the user.
+   */
+  @Prop({
+    type: String,
+    required: false,
+    default: null
+  })
+  password_reset_token: string
+
+  /**
+   * The expiration time for the password reset token.
+   */
+  @Prop({
+    type: Date,
+    required: false,
+    default: null
+  })
+  password_reset_expires: Date
+
+  /**
+   * Account verification status
+   */
+  @Prop({
+    type: Boolean,
+    default: false
+  })
+  is_verified: boolean
+
+  /**
+   * Failed login attempts counter
+   */
+  @Prop({
+    type: Number,
+    default: 0
+  })
+  failed_login_attempts: number
+
+  /**
+   * Account lock until timestamp
+   */
+  @Prop({
+    type: Date,
+    required: false,
+    default: null
+  })
+  locked_until: Date
 }
 
 /**
  * Represents a hydrated user document.
  */
-export type UsersDocument = HydratedDocument<Users>;
+export type UsersDocument = HydratedDocument<Users>
 
 /**
  * The Mongoose schema for the Users collection.
  */
-export const UsersSchema = SchemaFactory.createForClass(Users);
+export const UsersSchema = SchemaFactory.createForClass(Users)

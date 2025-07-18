@@ -1,6 +1,6 @@
-import { ApiProperty, PartialType } from '@nestjs/swagger';
-import { IsOptional, IsString, Length } from 'class-validator';
-import { CreateUserDto } from './create-user.dto';
+import { ApiProperty, PartialType } from "@nestjs/swagger"
+import { IsOptional, IsString, Length } from "class-validator"
+import { CreateUserDto } from "./create-user.dto"
 
 /**
  * Data transfer object for updating a user.
@@ -18,7 +18,7 @@ export class UpdatePasswordDto {
   @ApiProperty()
   @IsString()
   @IsOptional()
-  currentPassword: string;
+  currentPassword: string
 
   /**
    * The new password for the user.
@@ -26,5 +26,5 @@ export class UpdatePasswordDto {
   @ApiProperty()
   @IsString()
   @IsOptional()
-  newPassword: string;
+  newPassword: string
 }

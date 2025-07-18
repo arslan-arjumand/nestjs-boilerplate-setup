@@ -1,26 +1,20 @@
-import { HttpAdapterHost } from '@nestjs/core';
-import {
-  ArgumentsHost,
-  Catch,
-  ExceptionFilter,
-  HttpException,
-  HttpStatus,
-  Logger,
-} from '@nestjs/common';
+import { HttpAdapterHost } from "@nestjs/core"
+import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Logger } from "@nestjs/common"
+import config from "@/config"
 
 /**
  * Custom exception filter for handling HTTP exceptions.
  */
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
-  private readonly logger: Logger;
+  private readonly logger: Logger
 
   /**
    * Creates an instance of HttpExceptionFilter.
    * @param httpAdapterHost - The HttpAdapterHost instance.
    */
   constructor(private readonly httpAdapterHost: HttpAdapterHost) {
-    this.logger = new Logger();
+    this.logger = new Logger()
   }
 
   /**
@@ -28,21 +22,20 @@ export class HttpExceptionFilter implements ExceptionFilter {
    * @param exception - The exception object.
    * @param host - The ArgumentsHost object.
    */
-  catch(exception: unknown, host: ArgumentsHost): void {
-    const { httpAdapter } = this.httpAdapterHost;
-    const ctx = host.switchToHttp();
-    const request = ctx.getRequest();
+  catch(exception: HttpException, host: ArgumentsHost): void {
+    const { httpAdapter } = this.httpAdapterHost
+    const ctx = host.switchToHttp()
+    const request = ctx.getRequest()
 
     const status =
       (exception instanceof HttpException && exception.getStatus()) ||
-      exception['status'] ||
-      HttpStatus.INTERNAL_SERVER_ERROR;
+      exception["status"] ||
+      HttpStatus.INTERNAL_SERVER_ERROR
 
     const message =
-      (exception instanceof HttpException &&
-        exception.getResponse()?.['message']) ||
-      exception['message'] ||
-      'Internal server error';
+      (exception instanceof HttpException && exception.getResponse()?.["message"]) ||
+      exception["message"] ||
+      "Internal server error"
 
     // @Error format for development ENV
     const devErrorResponse = {
@@ -51,29 +44,23 @@ export class HttpExceptionFilter implements ExceptionFilter {
       status,
       data: {
         path: request.url,
-        method: request.method,
-      },
-    };
+        method: request.method
+      }
+    }
     // @Error format for production ENV
     const prodErrorResponse = {
       statusCode: status,
-      message,
-    };
+      message
+    }
 
     // Send Error
     httpAdapter.reply(
       ctx.getResponse(),
-      process.env.NODE_ENV === 'development'
-        ? devErrorResponse
-        : prodErrorResponse,
-      status,
-    );
+      config.SERVER.ENVIRONMENT === "development" ? devErrorResponse : prodErrorResponse,
+      status
+    )
 
     // send log
-    this.logger.log(
-      process.env.NODE_ENV === 'development'
-        ? devErrorResponse
-        : prodErrorResponse,
-    );
+    this.logger.log(config.SERVER.ENVIRONMENT === "development" ? devErrorResponse : prodErrorResponse)
   }
 }

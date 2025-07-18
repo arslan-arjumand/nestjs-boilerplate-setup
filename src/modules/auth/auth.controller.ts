@@ -11,24 +11,19 @@ import {
   HttpException,
   Res,
   Headers,
-} from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
-import { Request, Response } from 'express';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { GetUser } from 'src/decorators/get-user.decorator';
-import {
-  ForgotPasswordDto,
-  ResetPasswordDto,
-  SignInCredentialsDto,
-  SignupCredentialsDto,
-} from './dto';
-import { Users } from '../user/schema/user.schema';
-import { AuthService } from './service/auth.service';
-import { generalResponse } from 'src/utils';
-import { AvatarGenerator } from 'random-avatar-generator';
+  Req
+} from "@nestjs/common"
+import { AuthGuard } from "@nestjs/passport"
+import { Request, Response } from "express"
+import { ApiBearerAuth, ApiTags } from "@nestjs/swagger"
+import { GetUser } from "@/decorators/get-user.decorator"
+import { ForgotPasswordDto, ResetPasswordDto, SignInCredentialsDto, SignupCredentialsDto, RefreshTokenDto } from "./dto"
+import { Users } from "../user/schema/user.schema"
+import { AuthService } from "./service/auth.service"
+import { generalResponse } from "@/utils"
 
-@ApiTags('Auth')
-@Controller('auth')
+@ApiTags("Auth")
+@Controller("auth")
 @UseInterceptors(ClassSerializerInterceptor)
 export class AuthController {
   constructor(private authService: AuthService) {}
@@ -37,39 +32,42 @@ export class AuthController {
    * @description Sign up a new user.
    * @method POST
    * @param signupCredentialsDto
-   * @return An object containing the access token, refresh token, and user data.
+   * @return An object containing the access token and user data.
    */
-  @Post('signup')
-  async signUp(
-    @Res() response: Response,
-    @Body(ValidationPipe) signupCredentialsDto: SignupCredentialsDto,
-  ) {
+  @Post("signup")
+  async signUp(@Res() response: Response, @Body(ValidationPipe) signupCredentialsDto: SignupCredentialsDto) {
     try {
-      const generator = new AvatarGenerator();
-
       const newUserDto = {
         ...signupCredentialsDto,
-        avatar: generator.generateRandomAvatar('avatar'),
-      };
+        avatar: "default-avatar.png"
+      }
 
-      const data = await this.authService.signUp(newUserDto);
+      const data = await this.authService.signUp(newUserDto)
 
-      if (data && data['message'] && data['status']) {
+      if (data && data["message"] && data["status"]) {
         generalResponse({
           response,
-          message: data['message'],
-          status: data['status'],
-        });
+          message: data["message"],
+          status: data["status"]
+        })
       } else {
+        // Set refresh token as httpOnly cookie
+        response.cookie("refreshToken", data.refreshToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "strict",
+          maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        })
+
         generalResponse({
           response,
-          message: 'User created successfully',
+          message: "User created successfully",
           status: HttpStatus.CREATED,
-          data,
-        });
+          data: { accessToken: data.accessToken, user: data.user }
+        })
       }
     } catch (error) {
-      throw new HttpException(error['message'], error['status']);
+      throw new HttpException(error["message"], error["status"])
     }
   }
 
@@ -77,47 +75,118 @@ export class AuthController {
    * @description Sign in a user.
    * @method POST
    * @param signInCredentialsDto
-   * @return An object containing the access token, refresh token, and user data.
+   * @return An object containing the access token and user data.
    */
-  @Post('signin')
-  async signIn(
-    @Res() response: Response,
-    @Body(ValidationPipe) signInCredentialsDto: SignInCredentialsDto,
-  ) {
+  @Post("signin")
+  async signIn(@Res() response: Response, @Body(ValidationPipe) signInCredentialsDto: SignInCredentialsDto) {
     try {
-      const data = await this.authService.signIn(signInCredentialsDto);
+      const data = await this.authService.signIn(signInCredentialsDto)
+
+      // Set refresh token as httpOnly cookie
+      response.cookie("refreshToken", data.refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      })
 
       generalResponse({
         response,
-        message: `Session created successful`,
+        message: "Session created successfully",
         status: HttpStatus.OK,
-        data,
-      });
+        data: { accessToken: data.accessToken, user: data.user }
+      })
     } catch (error) {
-      throw new HttpException(error['message'], error['status']);
+      throw new HttpException(error["message"], error["status"])
+    }
+  }
+
+  /**
+   * @description Refresh access token using refresh token.
+   * @method POST
+   * @return New access token.
+   */
+  @Post("refresh")
+  async refreshToken(@Req() request: Request, @Res() response: Response) {
+    try {
+      const refreshToken = request.cookies["refreshToken"]
+
+      if (!refreshToken) {
+        throw new HttpException("No refresh token provided", HttpStatus.UNAUTHORIZED)
+      }
+
+      const tokens = await this.authService.refreshToken(refreshToken)
+
+      // Set new refresh token as httpOnly cookie
+      response.cookie("refreshToken", tokens.refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      })
+
+      generalResponse({
+        response,
+        message: "Token refreshed successfully",
+        status: HttpStatus.OK,
+        data: { accessToken: tokens.accessToken }
+      })
+    } catch (error) {
+      // Clear invalid refresh token
+      response.clearCookie("refreshToken")
+      throw new HttpException(error["message"], HttpStatus.UNAUTHORIZED)
     }
   }
 
   /**
    * @description Sign out a user.
-   * @method GET
+   * @method POST
    * @param user
    * @return A message indicating that the session has expired.
    */
-  @Get('logout')
+  @Post("logout")
   @ApiBearerAuth()
-  @UseGuards(AuthGuard('validate_token'))
+  @UseGuards(AuthGuard("validate_token"))
   async logout(@Res() response: Response, @GetUser() user: Users) {
     try {
-      await this.authService.signOut(user.id);
+      await this.authService.signOut(user.id)
+
+      // Clear refresh token cookie
+      response.clearCookie("refreshToken")
 
       generalResponse({
         response,
-        message: `Session expired successful`,
-        status: HttpStatus.OK,
-      });
+        message: "Session expired successfully",
+        status: HttpStatus.OK
+      })
     } catch (error) {
-      throw new HttpException(error['message'], error['status']);
+      throw new HttpException(error["message"], error["status"])
+    }
+  }
+
+  /**
+   * @description Sign out from all devices.
+   * @method POST
+   * @param user
+   * @return A message indicating that all sessions have expired.
+   */
+  @Post("logout-all")
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard("validate_token"))
+  async logoutAll(@Res() response: Response, @GetUser() user: Users) {
+    try {
+      await this.authService.signOutAllDevices(user.id)
+
+      // Clear refresh token cookie
+      response.clearCookie("refreshToken")
+
+      generalResponse({
+        response,
+        message: "All sessions expired successfully",
+        status: HttpStatus.OK
+      })
+    } catch (error) {
+      throw new HttpException(error["message"], error["status"])
     }
   }
 
@@ -127,21 +196,21 @@ export class AuthController {
    * @param user
    * @return User details.
    */
-  @Get('get-user')
+  @Get("me")
   @ApiBearerAuth()
-  @UseGuards(AuthGuard('validate_token'))
+  @UseGuards(AuthGuard("validate_token"))
   async getUserDetail(@Res() response: Response, @GetUser() user: Users) {
     try {
-      const data = await this.authService.getUser({ _id: user.id });
+      const data = await this.authService.getUser({ _id: user.id })
 
       generalResponse({
         response,
-        message: `User found successful`,
+        message: "User found successfully",
         status: HttpStatus.OK,
-        data,
-      });
+        data
+      })
     } catch (error) {
-      throw new HttpException(error['message'], error['status']);
+      throw new HttpException(error["message"], error["status"])
     }
   }
 
@@ -151,27 +220,22 @@ export class AuthController {
    * @param forgotPasswordDto
    * @return A message indicating that the reset link has been sent.
    */
-  @Post('forgotPassword')
+  @Post("forgot-password")
   async forgotPassword(
-    @Headers('origin') origin: any,
+    @Headers("origin") origin: any,
     @Res() response: Response,
-    @Body() forgotPasswordDto: ForgotPasswordDto,
+    @Body() forgotPasswordDto: ForgotPasswordDto
   ) {
     try {
-      const data = await this.authService.forgotPassword(
-        forgotPasswordDto,
-        origin,
-      );
+      const data = await this.authService.forgotPassword(forgotPasswordDto, origin)
 
-      if (data && data.messageId) {
-        generalResponse({
-          response,
-          message: 'Reset link sent successfully',
-          status: HttpStatus.OK,
-        });
-      }
+      generalResponse({
+        response,
+        message: data.message,
+        status: HttpStatus.OK
+      })
     } catch (error) {
-      throw new HttpException(error['message'], error['status']);
+      throw new HttpException(error["message"], error["status"])
     }
   }
 
@@ -179,27 +243,20 @@ export class AuthController {
    * @description Reset password.
    * @method POST
    * @param resetPasswordDto
-   * @return An object containing the updated user data.
+   * @return An object containing the success message.
    */
-  @Post('reset-password')
-  async resetPassword(
-    @Res() response: Response,
-    @Body(ValidationPipe)
-    resetPasswordDto: ResetPasswordDto,
-  ) {
+  @Post("reset-password")
+  async resetPassword(@Res() response: Response, @Body(ValidationPipe) resetPasswordDto: ResetPasswordDto) {
     try {
-      const data = await this.authService.resetPassword(resetPasswordDto);
+      const data = await this.authService.resetPassword(resetPasswordDto)
 
-      if (data) {
-        generalResponse({
-          response,
-          message: `Password changed successful`,
-          status: HttpStatus.OK,
-          data,
-        });
-      }
+      generalResponse({
+        response,
+        message: data.message,
+        status: HttpStatus.OK
+      })
     } catch (error) {
-      throw new HttpException(error['message'], error['status']);
+      throw new HttpException(error["message"], error["status"])
     }
   }
 }

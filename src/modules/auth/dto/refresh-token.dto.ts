@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsString } from 'class-validator';
+import { ApiProperty } from "@nestjs/swagger"
+import { IsString } from "class-validator"
 
 /**
  * Data transfer object for refreshing a token.
@@ -10,5 +10,5 @@ export class RefreshTokenDto {
    */
   @ApiProperty()
   @IsString()
-  refresh_token: string;
+  refresh_token: string
 }
