@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import { HydratedDocument, Document } from "mongoose"
+import { UserRole } from "@/enums"
 
 /**
  * Represents a user in the system.
@@ -58,15 +59,6 @@ export class Users extends Document {
   password: string
 
   /**
-   * The avatar URL of the user.
-   */
-  @Prop({
-    type: String,
-    required: true
-  })
-  avatar: string
-
-  /**
    * The refresh token for the user.
    */
   @Prop({
@@ -106,6 +98,26 @@ export class Users extends Document {
   is_verified: boolean
 
   /**
+   * Email verification token
+   */
+  @Prop({
+    type: String,
+    required: false,
+    default: null
+  })
+  email_verification_token: string
+
+  /**
+   * Email verification token expiry
+   */
+  @Prop({
+    type: Date,
+    required: false,
+    default: null
+  })
+  email_verification_expires: Date
+
+  /**
    * Failed login attempts counter
    */
   @Prop({
@@ -123,6 +135,16 @@ export class Users extends Document {
     default: null
   })
   locked_until: Date
+
+  /**
+   * User role for access control
+   */
+  @Prop({
+    type: String,
+    enum: UserRole,
+    default: UserRole.USER
+  })
+  role: UserRole
 }
 
 /**

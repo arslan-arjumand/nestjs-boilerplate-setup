@@ -27,3 +27,15 @@ export * from "./forgot-password.dto"
  * The ResetPasswordDto class represents the data transfer object for resetting a user's password.
  */
 export * from "./reset-password.dto"
+
+/**
+ * This module exports the VerifyEmailDto class.
+ * The VerifyEmailDto class represents the data transfer object for email verification.
+ */
+export * from "./verify-email.dto"
+
+/**
+ * This module exports the ResendVerificationDto class.
+ * The ResendVerificationDto class represents the data transfer object for resending email verification.
+ */
+export * from "./resend-verification.dto"

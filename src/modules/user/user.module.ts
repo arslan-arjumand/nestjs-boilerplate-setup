@@ -1,9 +1,9 @@
 import { MongooseModule } from "@nestjs/mongoose"
 import { Module } from "@nestjs/common"
-import { UserController } from "./user.controller"
-import { UserService } from "./service/user.service"
-import { UserRepository } from "./repository/user.repository"
-import { Users, UsersSchema } from "./schema/user.schema"
+import { UserController } from "@/modules/user/user.controller"
+import { UserService } from "@/modules/user/service/user.service"
+import { UserRepository } from "@/modules/user/repository/user.repository"
+import { Users, UsersSchema } from "@/modules/user/schema/user.schema"
 
 /**
  * Represents the user module of the application.

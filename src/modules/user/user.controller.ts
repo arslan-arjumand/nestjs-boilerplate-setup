@@ -21,9 +21,10 @@ import { Response } from "express"
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger"
 import { UserService } from "./service/user.service"
 import { CreateUserDto, UpdateUserDto, UpdatePasswordDto } from "./dto"
-import { GetUser } from "@/decorators/get-user.decorator"
+import { GetUser, Roles } from "@/decorators"
 import { compareHashValue, generalResponse, getHashValue } from "@/utils"
 import { Users } from "./schema/user.schema"
+import { UserRole } from "@/enums"
 
 @ApiTags("Users")
 @UseInterceptors(ClassSerializerInterceptor)
@@ -38,6 +39,8 @@ export class UserController {
    * @return newly created user {}
    */
   @ApiBearerAuth()
+  @UseGuards(AuthGuard("validate_token"))
+  @Roles(UserRole.ADMIN)
   @Post()
   async create(@Res() response: Response, @Body() createUserDto: CreateUserDto) {
     try {
@@ -63,6 +66,7 @@ export class UserController {
    */
   @ApiBearerAuth()
   @UseGuards(AuthGuard("validate_token"))
+  @Roles(UserRole.ADMIN)
   @Get("paginated")
   async findAllPaginated(@Res() response: Response, @Query("page") page: number, @Query("limit") limit: number) {
     try {
@@ -89,6 +93,7 @@ export class UserController {
    */
   @ApiBearerAuth()
   @UseGuards(AuthGuard("validate_token"))
+  @Roles(UserRole.ADMIN)
   @Get()
   async findAll(@Res() response: Response) {
     try {
@@ -113,9 +118,15 @@ export class UserController {
    */
   @ApiBearerAuth()
   @UseGuards(AuthGuard("validate_token"))
+  @Roles(UserRole.ADMIN, UserRole.USER)
   @Get(":id")
-  async findOne(@Res() response: Response, @Param("id") id: string) {
+  async findOne(@Res() response: Response, @Param("id") id: string, @GetUser() currentUser: Users) {
     try {
+      // Allow users to view their own profile or admins to view any profile
+      if (currentUser.role === UserRole.USER && currentUser.id !== id) {
+        throw new HttpException("Access denied: Can only view your own profile", HttpStatus.FORBIDDEN)
+      }
+
       const data = await this.userService.findOne({ _id: id })
       if (!data) {
         throw new NotFoundException("Enter a valid User ID")
@@ -140,6 +151,7 @@ export class UserController {
    */
   @ApiBearerAuth()
   @UseGuards(AuthGuard("validate_token"))
+  @Roles(UserRole.ADMIN, UserRole.USER)
   @Post("change-password")
   async updatePassword(
     @Res() response: Response,
@@ -168,17 +180,33 @@ export class UserController {
   }
 
   /**
-   * @description update user password
+   * @description update user
    * @method PATCH
    * @param id
-   * @param updatePasswordDto
+   * @param updateUserDto
    * @return updated user {}
    */
   @ApiBearerAuth()
   @UseGuards(AuthGuard("validate_token"))
+  @Roles(UserRole.ADMIN, UserRole.USER)
   @Patch(":id")
-  async update(@Res() response: Response, @Param("id") id: string, @Body() updateUserDto: UpdateUserDto) {
+  async update(
+    @Res() response: Response,
+    @Param("id") id: string,
+    @Body() updateUserDto: UpdateUserDto,
+    @GetUser() currentUser: Users
+  ) {
     try {
+      // Allow users to update their own profile or admins to update any profile
+      if (currentUser.role === UserRole.USER && currentUser.id !== id) {
+        throw new HttpException("Access denied: Can only update your own profile", HttpStatus.FORBIDDEN)
+      }
+
+      // Prevent users from changing their own role, only admins can do that
+      if (currentUser.role === UserRole.USER && updateUserDto.role) {
+        throw new HttpException("Access denied: Cannot change your own role", HttpStatus.FORBIDDEN)
+      }
+
       const data = await this.userService.update({ _id: id }, updateUserDto)
 
       generalResponse({
@@ -200,6 +228,7 @@ export class UserController {
    */
   @ApiBearerAuth()
   @UseGuards(AuthGuard("validate_token"))
+  @Roles(UserRole.ADMIN)
   @Delete(":id")
   async remove(@Res() response: Response, @Param("id") id: string) {
     try {

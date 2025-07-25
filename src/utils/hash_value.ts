@@ -6,7 +6,7 @@ import * as bcrypt from "bcrypt"
  * @returns A Promise that resolves to the generated hash value.
  */
 export const getHashValue = async (value: string): Promise<string> => {
-  const result = await bcrypt.hash(value, await bcrypt.genSalt(10))
+  const result = await bcrypt.hash(value, 12)
   return result
 }
 

@@ -1,5 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger"
-import { IsString, IsOptional } from "class-validator"
+import { IsString, IsOptional, IsEnum } from "class-validator"
+import { UserRole } from "@/enums"
 
 /**
  * Data transfer object for create user functionality.
@@ -27,4 +28,13 @@ export class CreateUserDto {
   @IsString({ message: "Password must be a string" })
   @IsOptional()
   readonly password: string
+
+  /**
+   * The role of the user.
+   * This field is optional and defaults to USER.
+   */
+  @ApiProperty({ enum: UserRole, default: UserRole.USER, required: false })
+  @IsEnum(UserRole, { message: "Role must be either USER or ADMIN" })
+  @IsOptional()
+  readonly role?: UserRole
 }

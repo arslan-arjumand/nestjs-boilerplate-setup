@@ -1,4 +1,5 @@
 import { Response } from "express"
+import { HttpStatus } from "@nestjs/common"
 
 /**
  * Sends a general response with the specified status, message, and data.
@@ -26,3 +27,31 @@ export const generalResponse = ({
     message,
     data
   })
+
+/**
+ * GeneralResponse utility class for creating structured API responses
+ */
+export class GeneralResponse {
+  /**
+   * Create a success response
+   */
+  static success(message: string, data: any = null) {
+    return {
+      success: true,
+      message,
+      data
+    }
+  }
+
+  /**
+   * Create an error response
+   */
+  static error(message: string, data: any = null, statusCode: HttpStatus = HttpStatus.BAD_REQUEST) {
+    return {
+      success: false,
+      message,
+      data,
+      statusCode
+    }
+  }
+}

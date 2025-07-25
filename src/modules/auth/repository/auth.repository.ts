@@ -1,20 +1,20 @@
 /**
  * Repository class for handling authentication-related operations.
  */
-import { HttpException, Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common"
+import { Injectable, UnauthorizedException } from "@nestjs/common"
 import * as bcrypt from "bcrypt"
 import { JwtService } from "@nestjs/jwt"
 import { UserService } from "@/modules/user/service/user.service"
 import config from "@/config"
 import * as crypto from "crypto"
 
-const { JWT_SECRET_TOKEN, JWT_SECRET_REFRESH_TOKEN, JWT_TOKEN_EXPIRATION, JWT_REFRESH_TOKEN_EXPIRATION } = config.JWT
+const { JWT_SECRET_TOKEN, JWT_REFRESH_TOKEN, JWT_SECRET_TOKEN_EXPIRATION, JWT_REFRESH_TOKEN_EXPIRATION } = config.JWT
 
 @Injectable()
 export class AuthRepository {
   constructor(
     private readonly userServices: UserService,
-    private readonly jwtService: JwtService
+    public readonly jwtService: JwtService
   ) {}
 
   /**
@@ -38,43 +38,53 @@ export class AuthRepository {
   }
 
   /**
-   * Generates an access token for a user.
+   * Generates an access token for a user with enhanced metadata
    * @param id - The ID of the user.
    * @param expiresIn - The expiration time for the token (optional).
+   * @param deviceInfo - Device information for tracking (optional).
    * @returns A promise that resolves to the access token.
    */
-  async getAccessToken(id: string, expiresIn?: string) {
-    return this.jwtService.sign(
-      {
-        _id: id,
-        type: "access",
-        iat: Math.floor(Date.now() / 1000)
-      },
-      {
-        secret: JWT_SECRET_TOKEN,
-        expiresIn: expiresIn || JWT_TOKEN_EXPIRATION
-      }
-    )
+  async getAccessToken(id: string, expiresIn?: string, deviceInfo?: string) {
+    // Decode base64 encoded private key
+    const privateKey = Buffer.from(JWT_SECRET_TOKEN, "base64").toString("utf8")
+
+    const payload = {
+      _id: id,
+      type: "access",
+      iat: Math.floor(Date.now() / 1000),
+      ...(deviceInfo && { device: deviceInfo })
+    }
+
+    return this.jwtService.sign(payload, {
+      privateKey: privateKey,
+      expiresIn: expiresIn || JWT_SECRET_TOKEN_EXPIRATION,
+      algorithm: "RS256"
+    })
   }
 
   /**
-   * Generates a refresh token for a user.
+   * Generates a refresh token for a user with enhanced metadata
    * @param id - The ID of the user.
    * @param expiresIn - The expiration time for the token (optional).
+   * @param deviceInfo - Device information for tracking (optional).
    * @returns A promise that resolves to the refresh token.
    */
-  async getRefreshToken(id: string, expiresIn?: string) {
-    return this.jwtService.sign(
-      {
-        _id: id,
-        type: "refresh",
-        iat: Math.floor(Date.now() / 1000)
-      },
-      {
-        secret: JWT_SECRET_REFRESH_TOKEN,
-        expiresIn: expiresIn || JWT_REFRESH_TOKEN_EXPIRATION
-      }
-    )
+  async getRefreshToken(id: string, expiresIn?: string, deviceInfo?: string) {
+    // Decode base64 encoded private key
+    const privateKey = Buffer.from(JWT_SECRET_TOKEN, "base64").toString("utf8")
+
+    const payload = {
+      _id: id,
+      type: "refresh",
+      iat: Math.floor(Date.now() / 1000),
+      ...(deviceInfo && { device: deviceInfo })
+    }
+
+    return this.jwtService.sign(payload, {
+      privateKey: privateKey,
+      expiresIn: expiresIn || JWT_REFRESH_TOKEN_EXPIRATION,
+      algorithm: "RS256"
+    })
   }
 
   /**
@@ -101,22 +111,34 @@ export class AuthRepository {
   }
 
   /**
-   * Verifies the validity of an access token.
+   * Verifies the validity of an access token with enhanced security checks
    * @param token - The token to verify.
    * @returns The user associated with the token.
    * @throws UnauthorizedException if the token is invalid or expired.
    */
   async verifyAccessToken(token: string) {
     try {
+      // Decode base64 encoded public key
+      const publicKey = Buffer.from(JWT_REFRESH_TOKEN, "base64").toString("utf8")
+
       const decoded = this.jwtService.verify(token, {
-        secret: JWT_SECRET_TOKEN
+        publicKey: publicKey,
+        algorithms: ["RS256"]
       }) as any
 
       if (decoded.type !== "access") {
         throw new UnauthorizedException("Invalid token type")
       }
 
-      // Find user by ID (not email)
+      // Check if token is not too old (additional security measure)
+      const tokenAge = Math.floor(Date.now() / 1000) - decoded.iat
+      const maxTokenAge = 24 * 60 * 60 // 24 hours in seconds
+
+      if (tokenAge > maxTokenAge) {
+        throw new UnauthorizedException("Token is too old")
+      }
+
+      // Find user by ID
       const user = await this.userServices.findOne({
         _id: decoded._id
       })
@@ -127,24 +149,40 @@ export class AuthRepository {
 
       return user
     } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error
+      }
       throw new UnauthorizedException("Invalid or expired token")
     }
   }
 
   /**
-   * Verifies and uses a refresh token to generate new tokens
+   * Verifies and uses a refresh token to generate new tokens with blacklist support
    * @param refreshToken - The refresh token
+   * @param deviceInfo - Device information for new tokens (optional)
    * @returns New access and refresh tokens
    */
-  async refreshTokens(refreshToken: string) {
+  async refreshTokens(refreshToken: string, deviceInfo?: string) {
     try {
+      // Decode base64 encoded public key
+      const publicKey = Buffer.from(JWT_REFRESH_TOKEN, "base64").toString("utf8")
+
       // Verify the refresh token
       const decoded = this.jwtService.verify(refreshToken, {
-        secret: JWT_SECRET_REFRESH_TOKEN
+        publicKey: publicKey,
+        algorithms: ["RS256"]
       }) as any
 
       if (decoded.type !== "refresh") {
         throw new UnauthorizedException("Invalid token type")
+      }
+
+      // Check token age for additional security
+      const tokenAge = Math.floor(Date.now() / 1000) - decoded.iat
+      const maxRefreshTokenAge = 30 * 24 * 60 * 60 // 30 days in seconds
+
+      if (tokenAge > maxRefreshTokenAge) {
+        throw new UnauthorizedException("Refresh token is too old")
       }
 
       // Find user
@@ -163,11 +201,14 @@ export class AuthRepository {
         throw new UnauthorizedException("Invalid refresh token")
       }
 
-      // Generate new tokens (refresh token rotation)
-      const newAccessToken = await this.getAccessToken(user._id.toString())
-      const newRefreshToken = await this.getRefreshToken(user._id.toString())
+      // Extract device info from original token or use provided
+      const tokenDeviceInfo = deviceInfo || decoded.device
 
-      // Update stored refresh token
+      // Generate new tokens with device info
+      const newAccessToken = await this.getAccessToken(user._id.toString(), undefined, tokenDeviceInfo)
+      const newRefreshToken = await this.getRefreshToken(user._id.toString(), undefined, tokenDeviceInfo)
+
+      // Update stored refresh token (refresh token rotation)
       await this.updateRefreshTokenInUser(newRefreshToken, user._id.toString())
 
       return {
@@ -175,6 +216,9 @@ export class AuthRepository {
         refreshToken: newRefreshToken
       }
     } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error
+      }
       throw new UnauthorizedException("Invalid or expired refresh token")
     }
   }

@@ -1,21 +1,24 @@
-import { Injectable } from "@nestjs/common"
-import { UserRepository } from "../repository/user.repository"
+import { Injectable, Logger } from "@nestjs/common"
+import { UserRepository } from "@/modules/user/repository/user.repository"
 import { EntityServices } from "@/modules/common/entity.service"
-import { Users } from "../schema/user.schema"
-import { CreateUserDto } from "../dto/create-user.dto"
-import { UpdateUserDto } from "../dto/update-user.dto"
+import { Users } from "@/modules/user/schema/user.schema"
+import { CreateUserDto } from "@/modules/user/dto/create-user.dto"
+import { UpdateUserDto } from "@/modules/user/dto/update-user.dto"
 
 /**
  * Service responsible for handling user-related operations.
  */
 @Injectable()
 export class UserService extends EntityServices {
+  private readonly logger = new Logger(UserService.name)
+
   /**
    * Creates an instance of UserService.
    * @param userRepository The user repository used for database operations.
    */
   constructor(private readonly userRepository: UserRepository) {
     super(userRepository)
+    this.logger.log("User service initialized successfully")
   }
 
   /**
@@ -24,7 +27,15 @@ export class UserService extends EntityServices {
    * @returns The created user.
    */
   async create(createUserDto: CreateUserDto | any): Promise<Users> {
-    return this.userRepository.create(createUserDto)
+    try {
+      this.logger.log(`Creating new user with email: ${createUserDto.email}`)
+      const user = await this.userRepository.create(createUserDto)
+      this.logger.log(`User created successfully with ID: ${user.id}`)
+      return user
+    } catch (error) {
+      this.logger.error(`Failed to create user with email ${createUserDto.email}: ${error.message}`, error.stack)
+      throw error
+    }
   }
 
   /**
@@ -34,6 +45,18 @@ export class UserService extends EntityServices {
    * @returns The updated user.
    */
   async update(condition: object, updateUserDto: UpdateUserDto | any): Promise<Users | null> {
-    return this.userRepository.findOneAndUpdate(condition, updateUserDto)
+    try {
+      this.logger.log(`Updating user with condition: ${JSON.stringify(condition)}`)
+      const user = await this.userRepository.findOneAndUpdate(condition, updateUserDto)
+      if (user) {
+        this.logger.log(`User updated successfully with ID: ${user.id}`)
+      } else {
+        this.logger.warn(`No user found to update with condition: ${JSON.stringify(condition)}`)
+      }
+      return user
+    } catch (error) {
+      this.logger.error(`Failed to update user: ${error.message}`, error.stack)
+      throw error
+    }
   }
 }

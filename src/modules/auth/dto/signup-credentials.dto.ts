@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger"
-import { IsOptional, IsString, Length } from "class-validator"
+import { IsOptional, IsString, Length, IsEmail } from "class-validator"
 
 /**
  * Data transfer object for signup credentials.
@@ -20,7 +20,7 @@ export class SignupCredentialsDto {
    * @example john@example.com
    */
   @ApiProperty()
-  @IsString()
+  @IsEmail({}, { message: "Please provide a valid email address" })
   email: string
 
   /**
